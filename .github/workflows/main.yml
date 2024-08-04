@@ -1,0 +1,94 @@
+name: main
+
+on:
+  schedule:
+    - cron: 0 0 * * *
+  workflow_dispatch:
+
+jobs:
+  set-date:
+    runs-on: ubuntu-22.04
+    permissions:
+      pull-requests: write
+      issues: write
+      repository-projects: write
+      contents: write
+      actions: write
+    steps:
+      - name: Set date variable
+        run: date +'%Y-%m-%d' > BRANCH_DATE.txt
+      - name: Archive branch date
+        uses: actions/upload-artifact@v2
+        with:
+          name: branch-date
+          path: BRANCH_DATE.txt
+
+  download-and-push:
+    needs: set-date
+    runs-on: ubuntu-22.04
+    permissions:
+      pull-requests: write
+      issues: write
+      repository-projects: write
+      contents: write
+      actions: write
+    steps:
+      - name: Download branch date
+        uses: actions/download-artifact@v2
+        with:
+          name: branch-date     
+      - name: Set branch date
+        run: |
+            echo "BRANCH_DATE=$(cat BRANCH_DATE.txt)" >> $GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set git config
+        run: |
+          git config user.email "admin@webpan.org"
+          git config user.name "admin"
+      - name: Create new branch
+        run: |
+          git checkout -B ${{ env.BRANCH_DATE }}
+      - name: Download files
+        run: |
+          cd ${{ github.workspace }}
+          wget -O subnet.lst https://antifilter.download/list/subnet.lst
+          wget -O ipsum.lst  https://antifilter.download/list/ipsum.lst
+          wget -O community.lst https://community.antifilter.download/list/community.lst
+      - name: Add to community list
+        run: |
+          cd ${{ github.workspace }}
+          cat custom/ip.lst | grep "^[^#*/;]" >> community.lst
+      - name: Push to branch
+        run: |
+          cd ${{ github.workspace }}
+          git add .
+          git commit -m "Added downloaded files"
+          git push origin HEAD:${{ env.BRANCH_DATE }}
+
+  rebase:
+    needs: download-and-push
+    runs-on: ubuntu-22.04
+    permissions:
+      pull-requests: write
+      issues: write
+      repository-projects: write
+      contents: write
+      actions: write
+    steps:
+      - name: Download branch date
+        uses: actions/download-artifact@v2
+        with:
+          name: branch-date     
+      - name: Set branch date
+        run: |
+            echo "BRANCH_DATE=$(cat BRANCH_DATE.txt)" >> $GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Rebase main branch
+        run: |
+          sleep 30s
+          git checkout main
+          git pull
+          git merge origin/${{ env.BRANCH_DATE }}  --no-edit
+          git push origin HEAD:main
