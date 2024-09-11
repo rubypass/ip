@@ -22,6 +22,7 @@ jobs:
         with:
           name: branch-date
           path: BRANCH_DATE.txt
+          run-id: ${{ github.event.workflow_run.id }}
 
   download-and-push:
     needs: set-date
@@ -36,7 +37,8 @@ jobs:
       - name: Download branch date
         uses: actions/download-artifact@v4
         with:
-          name: branch-date     
+          name: branch-date
+          run-id: ${{ github.event.workflow_run.id }}
       - name: Set branch date
         run: |
             echo "BRANCH_DATE=$(cat BRANCH_DATE.txt)" >> $GITHUB_ENV
@@ -79,7 +81,8 @@ jobs:
       - name: Download branch date
         uses: actions/download-artifact@v4
         with:
-          name: branch-date     
+          name: branch-date
+          run-id: ${{ github.event.workflow_run.id }}
       - name: Set branch date
         run: |
             echo "BRANCH_DATE=$(cat BRANCH_DATE.txt)" >> $GITHUB_ENV
