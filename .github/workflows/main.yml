@@ -61,6 +61,9 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           cat custom/ip.lst | grep "^[^#*/;]" >> community.lst
+          cat community.lst | grep "^[^#*/;]" >> all.lst
+          cat ipsum.lst | grep "^[^#*/;]" >> all.lst
+          cat subnet.lst | grep "^[^#*/;]" >> all.lst
       - name: Push to branch
         run: |
           cd ${{ github.workspace }}
